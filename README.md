@@ -1,73 +1,76 @@
-# React + TypeScript + Vite
+# HabitScope (Wellness Habit Study)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+HabitScope is a web app for structured daily wellness tracking and reflection.  
+It was built as a college seminar project under **Wellness Habit Study**.
 
-Currently, two official plugins are available:
+Users can log daily entries (sleep, study, mood, stress, journal), view history, explore analytics, and generate a monthly wrap summary.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Project framing
 
-## React Compiler
+- Personal wellness tracking and reflection
+- Academic self-monitoring application
+- Multi-user web app with private user data
+- Pattern observation over time from structured check-ins
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Current features
 
-## Expanding the ESLint configuration
+- Email/password sign up and sign in (Supabase Auth)
+- Daily check-in form with:
+  - sleep hours
+  - study hours
+  - mood (1-5)
+  - stress label (Low / Moderate / High)
+  - optional journal
+- History table with:
+  - saved entries
+  - summary cards
+  - delete entry action
+- Month-based dashboard snapshot
+- Monthly wrap view with:
+  - averages
+  - stress frequency
+  - highlights
+  - streaks
+  - mini-awards
+  - top lists
+- Analytics page with month-filtered charts:
+  - trend chart (mood, sleep, study, stress)
+  - mood distribution
+  - stress distribution
+- FAQ page and landing experience
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech stack
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- React + TypeScript + Vite
+- Tailwind CSS
+- Recharts
+- Supabase (Auth + Postgres + RLS)
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Data model highlights
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Main table: `daily_wellness_entries`
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Key fields:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+- `user_id` (owner of entry)
+- `entry_date`
+- `sleep_hours`
+- `study_hours`
+- `mood` (1-5)
+- `stress_label` (`Low` | `Moderate` | `High`)
+- `stress_numeric` (1 | 2 | 3)
+- `journal`
+- timestamps
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+Stress mapping used by analytics:
+
+- Low = 1
+- Moderate = 2
+- High = 3
+
+## Local development
+
+### 1) Install dependencies
+
+```bash
+npm install
