@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Primary & calm neutrals — academic wellness UI */
+  --color-primary: #84b59f;
+  --color-primary-foreground: #f8faf8;
+  --color-primary-muted: #6a9a82;
+  --color-surface: #f6f8f6;
+  --color-surface-elevated: #ffffff;
+  --color-border: #e2ebe4;
+  --color-text: #2d3a34;
+  --color-text-muted: #5c6b64;
+  --font-sans: 'DM Sans', system-ui, 'Segoe UI', sans-serif;
+  --radius-card: 1rem;
+  --shadow-soft: 0 8px 30px rgb(45 58 52 / 0.06);
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply m-0 min-h-svh bg-(--color-surface) text-(--color-text) font-sans;
+  }
+  #root {
+    @apply min-h-svh;
+  }
+}
