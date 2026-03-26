@@ -8,11 +8,16 @@ import {
   type ReactNode,
 } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '@/lib/supabase'
+import {
+  getSupabaseConfigError,
+  normalizeSupabaseErrorMessage,
+  supabase,
+} from '@/lib/supabase'
 
 type AuthResult = { error: Error | null }
 
 type AuthContextValue = {
+  configError: string | null
   user: User | null
   session: Session | null
   loading: boolean
@@ -24,17 +29,32 @@ type AuthContextValue = {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const [configError, setConfigError] = useState<string | null>(() =>
+    getSupabaseConfigError(),
+  )
   const [user, setUser] = useState<User | null>(null)
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(() => supabase !== null)
+  const [loading, setLoading] = useState(
+    () => supabase !== null && getSupabaseConfigError() === null,
+  )
 
   useEffect(() => {
     if (!supabase) return
 
     let cancelled = false
 
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
+    supabase.auth.getSession().then(({ data: { session: s }, error }) => {
       if (cancelled) return
+
+      if (error) {
+        const normalized = normalizeSupabaseErrorMessage(error.message)
+        if (normalized.isConfigError) {
+          setConfigError(normalized.message)
+        }
+        setLoading(false)
+        return
+      }
+
       setSession(s)
       setUser(s?.user ?? null)
       setLoading(false)
@@ -55,25 +75,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = useCallback(async (email: string, password: string) => {
     if (!supabase) {
-      return { error: new Error('Supabase is not configured.') }
+      return { error: new Error(configError ?? 'Supabase is not configured.') }
+    }
+    if (configError) {
+      return { error: new Error(configError) }
     }
     const { error } = await supabase.auth.signInWithPassword({
       email: email.trim(),
       password,
     })
-    return { error: error ? new Error(error.message) : null }
-  }, [])
+    if (!error) {
+      return { error: null }
+    }
+
+    const normalized = normalizeSupabaseErrorMessage(error.message)
+    if (normalized.isConfigError) {
+      setConfigError(normalized.message)
+    }
+
+    return { error: new Error(normalized.message) }
+  }, [configError])
 
   const signUp = useCallback(async (email: string, password: string) => {
     if (!supabase) {
-      return { error: new Error('Supabase is not configured.') }
+      return { error: new Error(configError ?? 'Supabase is not configured.') }
+    }
+    if (configError) {
+      return { error: new Error(configError) }
     }
     const { error } = await supabase.auth.signUp({
       email: email.trim(),
       password,
     })
-    return { error: error ? new Error(error.message) : null }
-  }, [])
+    if (!error) {
+      return { error: null }
+    }
+
+    const normalized = normalizeSupabaseErrorMessage(error.message)
+    if (normalized.isConfigError) {
+      setConfigError(normalized.message)
+    }
+
+    return { error: new Error(normalized.message) }
+  }, [configError])
 
   const signOut = useCallback(async () => {
     if (!supabase) return
@@ -82,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      configError,
       user,
       session,
       loading,
@@ -89,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signUp,
       signOut,
     }),
-    [user, session, loading, signIn, signUp, signOut],
+    [configError, user, session, loading, signIn, signUp, signOut],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

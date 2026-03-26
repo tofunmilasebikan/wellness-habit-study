@@ -74,3 +74,24 @@ Stress mapping used by analytics:
 
 ```bash
 npm install
+```
+
+### 2) Configure Supabase
+
+Create a local `.env` file with your Supabase project values:
+
+```bash
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-project-anon-key
+```
+
+This app is built with Vite, so only variables prefixed with `VITE_` are exposed to the browser.
+
+## Vercel deployment
+
+Add the same two variables in Vercel under Project Settings -> Environment Variables:
+
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+Make sure both values come from the same Supabase project. If you see `Invalid API key` in production, the deployed build usually has the wrong key or a stale build. After updating either variable in Vercel, trigger a new deployment so the client bundle is rebuilt with the new values.

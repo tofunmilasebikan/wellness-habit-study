@@ -3,7 +3,7 @@ import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function LoginPage() {
-  const { user, loading, signIn } = useAuth()
+  const { user, loading, signIn, configError } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as {
@@ -27,6 +27,10 @@ export function LoginPage() {
     e.preventDefault()
     setError(null)
     setFlash(null)
+    if (configError) {
+      setError(configError)
+      return
+    }
     setBusy(true)
     try {
       const { error: err } = await signIn(email, password)
@@ -54,12 +58,20 @@ export function LoginPage() {
           onSubmit={onSubmit}
           className="rounded-2xl border border-border bg-surface-elevated p-6 shadow-soft"
         >
+          {configError ? (
+            <p
+              className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800"
+              role="alert"
+            >
+              {configError}
+            </p>
+          ) : null}
           {flash ? (
             <p className="mb-4 rounded-xl bg-primary/10 px-3 py-2 text-sm text-text">
               {flash}
             </p>
           ) : null}
-          {error ? (
+          {error && !configError ? (
             <p
               className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800"
               role="alert"
@@ -98,7 +110,7 @@ export function LoginPage() {
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || Boolean(configError)}
             className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-soft disabled:opacity-60"
           >
             {busy ? 'Signing in…' : 'Sign in'}

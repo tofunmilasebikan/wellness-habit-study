@@ -3,7 +3,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function SignupPage() {
-  const { user, loading, signUp } = useAuth()
+  const { user, loading, signUp, configError } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -19,6 +19,11 @@ export function SignupPage() {
   async function onSubmit(e: FormEvent) {
     e.preventDefault()
     setError(null)
+
+    if (configError) {
+      setError(configError)
+      return
+    }
 
     if (password !== confirm) {
       setError('Passwords do not match.')
@@ -62,7 +67,15 @@ export function SignupPage() {
           onSubmit={onSubmit}
           className="rounded-2xl border border-border bg-surface-elevated p-6 shadow-soft"
         >
-          {error ? (
+          {configError ? (
+            <p
+              className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800"
+              role="alert"
+            >
+              {configError}
+            </p>
+          ) : null}
+          {error && !configError ? (
             <p
               className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800"
               role="alert"
@@ -114,7 +127,7 @@ export function SignupPage() {
 
           <button
             type="submit"
-            disabled={busy}
+            disabled={busy || Boolean(configError)}
             className="w-full rounded-full bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-soft disabled:opacity-60"
           >
             {busy ? 'Creating account…' : 'Sign up'}

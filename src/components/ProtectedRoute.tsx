@@ -3,23 +3,16 @@ import { useAuth } from '@/contexts/AuthContext'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
 export function ProtectedRoute() {
-  const { user, loading } = useAuth()
+  const { user, loading, configError } = useAuth()
   const location = useLocation()
   const supabaseReady = isSupabaseConfigured()
 
-  if (!supabaseReady) {
+  if (!supabaseReady || configError) {
     return (
       <div className="flex min-h-svh flex-col items-center justify-center gap-4 bg-surface px-4">
         <p className="max-w-md text-center text-text-muted">
-          Supabase is not configured. Add{' '}
-          <code className="rounded bg-border/60 px-1.5 py-0.5 text-sm text-text">
-            VITE_SUPABASE_URL
-          </code>{' '}
-          and{' '}
-          <code className="rounded bg-border/60 px-1.5 py-0.5 text-sm text-text">
-            VITE_SUPABASE_ANON_KEY
-          </code>{' '}
-          to <code className="text-sm">.env</code>, then restart the dev server.
+          {configError ??
+            'Supabase is not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then restart or redeploy.'}
         </p>
         <Link
           to="/"
