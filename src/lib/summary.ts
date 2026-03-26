@@ -9,10 +9,25 @@ export type MonthSummary = {
   avgSleep: number
   avgStudy: number
   avgMood: number
+  totalSleep: number
+  totalStudy: number
   stressCounts: StressCounts
   mostCommonStress: keyof StressCounts
   bestMoodDay: string | null
   mostStressDay: string | null
+  moodGoodDays: number
+  moodGoodPct: number
+  stressPct: StressCounts
+  streakLongest: number
+  streakCurrent: number
+  topMoodDays: { date: string; mood: number }[]
+  topStudyDays: { date: string; study: number }[]
+  topStressDays: { date: string; stress: number }[]
+  miniAwards: {
+    focusDay: string | null
+    rechargeDay: string | null
+    balanceDay: string | null
+  }
   insightLine: string | null
 }
 
@@ -38,14 +53,16 @@ export function summarizeMonth(rows: EntryRow[], monthKey: string): MonthSummary
   }
 
   const count = monthRows.length
+  const totalSleep = monthRows.reduce((acc, r) => acc + Number(r.sleep_hours), 0)
+  const totalStudy = monthRows.reduce((acc, r) => acc + Number(r.study_hours), 0)
   const avgSleep =
     count === 0
       ? 0
-      : monthRows.reduce((acc, r) => acc + Number(r.sleep_hours), 0) / count
+      : totalSleep / count
   const avgStudy =
     count === 0
       ? 0
-      : monthRows.reduce((acc, r) => acc + Number(r.study_hours), 0) / count
+      : totalStudy / count
   const avgMood =
     count === 0 ? 0 : monthRows.reduce((acc, r) => acc + Number(r.mood), 0) / count
 
@@ -76,6 +93,42 @@ export function summarizeMonth(rows: EntryRow[], monthKey: string): MonthSummary
     }
   }
 
+  const moodGoodDays = monthRows.filter((r) => Number(r.mood) >= 4).length
+  const moodGoodPct = count === 0 ? 0 : Math.round((moodGoodDays / count) * 100)
+
+  const stressPct: StressCounts = {
+    Low: count === 0 ? 0 : Math.round((stressCounts.Low / count) * 100),
+    Moderate: count === 0 ? 0 : Math.round((stressCounts.Moderate / count) * 100),
+    High: count === 0 ? 0 : Math.round((stressCounts.High / count) * 100),
+  }
+
+  const { longest, current } = computeStreaks(monthRows)
+
+  const topMoodDays = [...monthRows]
+    .sort((a, b) => Number(b.mood) - Number(a.mood) || (a.entry_date < b.entry_date ? -1 : 1))
+    .slice(0, 3)
+    .map((r) => ({ date: r.entry_date, mood: Number(r.mood) }))
+
+  const topStudyDays = [...monthRows]
+    .sort(
+      (a, b) =>
+        Number(b.study_hours) - Number(a.study_hours) ||
+        (a.entry_date < b.entry_date ? -1 : 1),
+    )
+    .slice(0, 3)
+    .map((r) => ({ date: r.entry_date, study: Number(r.study_hours) }))
+
+  const topStressDays = [...monthRows]
+    .sort(
+      (a, b) =>
+        Number(b.stress_numeric) - Number(a.stress_numeric) ||
+        (a.entry_date < b.entry_date ? -1 : 1),
+    )
+    .slice(0, 3)
+    .map((r) => ({ date: r.entry_date, stress: Number(r.stress_numeric) }))
+
+  const miniAwards = computeMiniAwards(monthRows, { avgSleep, avgStudy, avgMood })
+
   const insightLine = computeSimpleInsight(monthRows)
 
   return {
@@ -84,10 +137,21 @@ export function summarizeMonth(rows: EntryRow[], monthKey: string): MonthSummary
     avgSleep: round1(avgSleep),
     avgStudy: round1(avgStudy),
     avgMood: round1(avgMood),
+    totalSleep: round1(totalSleep),
+    totalStudy: round1(totalStudy),
     stressCounts,
     mostCommonStress,
     bestMoodDay,
     mostStressDay,
+    moodGoodDays,
+    moodGoodPct,
+    stressPct,
+    streakLongest: longest,
+    streakCurrent: current,
+    topMoodDays,
+    topStudyDays,
+    topStressDays,
+    miniAwards,
     insightLine,
   }
 }
@@ -122,5 +186,77 @@ function computeSimpleInsight(rows: EntryRow[]): string | null {
     return 'On higher-sleep days, your mood tended to be higher.'
   }
   return 'On higher-sleep days, your mood tended to be lower.'
+}
+
+function toDayNumber(iso: string): number {
+  // iso is YYYY-MM-DD; parse as UTC midnight to avoid TZ drift.
+  const [y, m, d] = iso.split('-').map(Number)
+  return Date.UTC(y, m - 1, d) / 86400000
+}
+
+function computeStreaks(rows: EntryRow[]): { longest: number; current: number } {
+  if (rows.length === 0) return { longest: 0, current: 0 }
+  const days = Array.from(new Set(rows.map((r) => r.entry_date)))
+    .sort()
+    .map(toDayNumber)
+
+  let longest = 1
+  let run = 1
+  for (let i = 1; i < days.length; i++) {
+    if (days[i] === days[i - 1] + 1) {
+      run++
+      longest = Math.max(longest, run)
+    } else {
+      run = 1
+    }
+  }
+
+  // Current streak (ending on latest logged day)
+  let current = 1
+  for (let i = days.length - 1; i >= 1; i--) {
+    if (days[i] === days[i - 1] + 1) current++
+    else break
+  }
+
+  return { longest, current }
+}
+
+function computeMiniAwards(
+  rows: EntryRow[],
+  avgs: { avgSleep: number; avgStudy: number; avgMood: number },
+): { focusDay: string | null; rechargeDay: string | null; balanceDay: string | null } {
+  if (rows.length === 0) return { focusDay: null, rechargeDay: null, balanceDay: null }
+
+  let focusDay: string | null = null
+  let bestStudy = -Infinity
+  let rechargeDay: string | null = null
+  let bestSleep = -Infinity
+  let balanceDay: string | null = null
+  let bestBalance = Infinity
+
+  for (const r of rows) {
+    const study = Number(r.study_hours)
+    const sleep = Number(r.sleep_hours)
+    if (study > bestStudy) {
+      bestStudy = study
+      focusDay = r.entry_date
+    }
+    if (sleep > bestSleep) {
+      bestSleep = sleep
+      rechargeDay = r.entry_date
+    }
+
+    const mood = Number(r.mood)
+    const score =
+      Math.abs(sleep - avgs.avgSleep) +
+      Math.abs(study - avgs.avgStudy) +
+      Math.abs(mood - avgs.avgMood)
+    if (score < bestBalance) {
+      bestBalance = score
+      balanceDay = r.entry_date
+    }
+  }
+
+  return { focusDay, rechargeDay, balanceDay }
 }
 

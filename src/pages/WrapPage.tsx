@@ -13,6 +13,34 @@ function Pill({ label, value }: { label: string; value: string }) {
   )
 }
 
+function TopList({
+  title,
+  items,
+}: {
+  title: string
+  items: { left: string; right: string }[]
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-surface p-5">
+      <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
+        {title}
+      </p>
+      <div className="mt-3 space-y-2">
+        {items.length === 0 ? (
+          <p className="text-sm text-text-muted">—</p>
+        ) : (
+          items.map((it) => (
+            <div key={`${it.left}-${it.right}`} className="flex items-baseline justify-between gap-4">
+              <p className="text-sm font-medium text-text">{it.left}</p>
+              <p className="text-sm text-text-muted">{it.right}</p>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  )
+}
+
 export function WrapPage() {
   const { rows, loading, error } = useEntries()
   const [params, setParams] = useSearchParams()
@@ -38,6 +66,12 @@ export function WrapPage() {
       <div className="rounded-2xl border border-border bg-surface-elevated p-8 shadow-soft">
         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
           <div>
+            <Link
+              to="/app"
+              className="mb-3 inline-flex text-xs font-semibold text-text-muted hover:text-text"
+            >
+              ← Back
+            </Link>
             <h1 className="mb-2 text-2xl font-semibold tracking-tight text-text">
               Monthly Wrap
             </h1>
@@ -88,6 +122,13 @@ export function WrapPage() {
               <Pill label="Most common stress" value={summary.mostCommonStress} />
             </div>
 
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Pill label="Total study" value={`${summary.totalStudy}h`} />
+              <Pill label="Good mood days (4–5)" value={`${summary.moodGoodDays} (${summary.moodGoodPct}%)`} />
+              <Pill label="Longest streak" value={`${summary.streakLongest} days`} />
+              <Pill label="Current streak" value={`${summary.streakCurrent} days`} />
+            </div>
+
             <div className="grid gap-4 md:grid-cols-2">
               <div className="rounded-2xl border border-border bg-surface p-5">
                 <p className="text-xs font-semibold uppercase tracking-wide text-text-muted">
@@ -102,6 +143,18 @@ export function WrapPage() {
                     <span className="text-text-muted">Most stressful day: </span>
                     {summary.mostStressDay ?? '—'}
                   </p>
+                  <p>
+                    <span className="text-text-muted">Focus Day: </span>
+                    {summary.miniAwards.focusDay ?? '—'}
+                  </p>
+                  <p>
+                    <span className="text-text-muted">Recharge Day: </span>
+                    {summary.miniAwards.rechargeDay ?? '—'}
+                  </p>
+                  <p>
+                    <span className="text-text-muted">Most Balanced Day: </span>
+                    {summary.miniAwards.balanceDay ?? '—'}
+                  </p>
                 </div>
               </div>
 
@@ -115,11 +168,17 @@ export function WrapPage() {
                     <p className="mt-1 font-semibold text-text">
                       {summary.stressCounts.Low}
                     </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {summary.stressPct.Low}%
+                    </p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface-elevated p-3">
                     <p className="text-xs text-text-muted">Moderate</p>
                     <p className="mt-1 font-semibold text-text">
                       {summary.stressCounts.Moderate}
+                    </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {summary.stressPct.Moderate}%
                     </p>
                   </div>
                   <div className="rounded-xl border border-border bg-surface-elevated p-3">
@@ -127,9 +186,36 @@ export function WrapPage() {
                     <p className="mt-1 font-semibold text-text">
                       {summary.stressCounts.High}
                     </p>
+                    <p className="mt-1 text-xs text-text-muted">
+                      {summary.stressPct.High}%
+                    </p>
                   </div>
                 </div>
               </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-3">
+              <TopList
+                title="Top mood days"
+                items={summary.topMoodDays.map((d) => ({
+                  left: d.date,
+                  right: `Mood ${d.mood}`,
+                }))}
+              />
+              <TopList
+                title="Top study days"
+                items={summary.topStudyDays.map((d) => ({
+                  left: d.date,
+                  right: `${d.study.toFixed(1)}h`,
+                }))}
+              />
+              <TopList
+                title="Top stressful days"
+                items={summary.topStressDays.map((d) => ({
+                  left: d.date,
+                  right: `Stress ${d.stress}`,
+                }))}
+              />
             </div>
 
             {summary.insightLine ? (

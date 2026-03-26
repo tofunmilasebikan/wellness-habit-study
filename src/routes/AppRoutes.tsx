@@ -7,7 +7,7 @@ import { DashboardPage } from '@/pages/DashboardPage'
 import { HistoryPage } from '@/pages/HistoryPage'
 import { LandingPage } from '@/pages/LandingPage'
 import { LoginPage } from '@/pages/LoginPage'
-import { PlaceholderPage } from '@/pages/PlaceholderPage'
+import { AnalyticsPage } from '@/pages/AnalyticsPage'
 import { SignupPage } from '@/pages/SignupPage'
 import { WrapPage } from '@/pages/WrapPage'
 
@@ -36,12 +36,7 @@ export function AppRoutes() {
             />
             <Route
               path="analytics"
-              element={
-                <PlaceholderPage
-                  title="Analytics"
-                  description="Charts and summary cards will appear here next."
-                />
-              }
+              element={<AnalyticsPage />}
             />
             <Route
               path="wrap"
