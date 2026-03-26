@@ -1,4 +1,4 @@
-import { DISCLAIMER_SHORT } from '@/lib/constants'
+import { APP_NAME } from '@/lib/constants'
 import { useAuth } from '@/contexts/AuthContext'
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 
@@ -30,7 +30,7 @@ export function MainLayout() {
               to="/app"
               className="shrink-0 text-lg font-semibold tracking-tight text-text"
             >
-              Wellness Habit Study
+              {APP_NAME}
             </NavLink>
             <span
               className="hidden max-w-[200px] truncate text-sm text-text-muted sm:inline"
@@ -67,13 +67,12 @@ export function MainLayout() {
         <Outlet />
       </main>
 
-      <footer className="border-t border-border bg-surface-elevated py-6">
-        <p className="mx-auto max-w-5xl px-4 text-center text-sm text-text-muted md:px-6">
-          {DISCLAIMER_SHORT}{' '}
-          <Link to="/" className="text-primary-muted hover:underline">
+      <footer className="border-t border-border bg-surface-elevated py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-center px-4 md:px-6">
+          <Link to="/" className="text-xs font-medium text-text-muted hover:text-text">
             Home
           </Link>
-        </p>
+        </div>
       </footer>
     </div>
   )

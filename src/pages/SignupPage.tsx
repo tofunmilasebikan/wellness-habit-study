@@ -1,6 +1,5 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
-import { Disclaimer } from '@/components/Disclaimer'
 import { useAuth } from '@/contexts/AuthContext'
 
 export function SignupPage() {
@@ -135,9 +134,6 @@ export function SignupPage() {
           </Link>
         </p>
 
-        <div className="mt-10">
-          <Disclaimer />
-        </div>
       </div>
     </div>
   )
